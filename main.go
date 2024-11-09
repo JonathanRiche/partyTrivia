@@ -4,16 +4,31 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"richetechguy/internal/blink"
+	"richetechguy/internal/game"
 	"richetechguy/internal/generate"
 	"richetechguy/internal/middleware"
 	"richetechguy/internal/template"
 	"richetechguy/internal/view"
-	"strings"
+	"richetechguy/internal/websocket"
+
+	// "strings"
 
 	"github.com/joho/godotenv"
 )
 
+func handleJoinGame(gm *game.GameManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		name := r.FormValue("name")
+		if name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		// Create or join game logic
+		// Return game lobby template
+		template.GameLobby(name).Render(r.Context(), w)
+	}
+}
 func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -27,26 +42,17 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Placeholder for the email and name wire this up for correct fields
-	email := r.Form.Get("email")
 	name := r.Form.Get("name")
 
-	if email == "" || name == "" {
+	if name == "" {
 		http.Error(w, "Email and name are required", http.StatusBadRequest)
 		return
 	}
 
 	// Process the data (for now, we'll just print it)
-	fmt.Printf("Received submission - Email: %s, Name: %s\n", email, name)
+	fmt.Printf("Received submission - Name: %s\n", name)
 	// Send a response
 	w.Write([]byte("Form submitted successfully"))
-}
-func dynamicPath(w http.ResponseWriter, r *http.Request) {
-	item, err := blink.GetBlinkData(r.URL.Path)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error fetching data: %v", err), http.StatusInternalServerError)
-		return
-	}
-	middleware.Chain(w, r, template.Home("Home", item))
 }
 
 func main() {
@@ -62,30 +68,34 @@ func main() {
 	mux.HandleFunc("GET /favicon.ico", view.ServeFavicon)
 	mux.HandleFunc("GET /static/", view.ServeStaticFiles)
 
+	gameManager := game.NewGameManager()
+
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			item, err := blink.GetBlinkData("home")
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Error fetching data: %v", err), http.StatusInternalServerError)
-				return
-			}
-			middleware.Chain(w, r, template.Home("Home", item))
-		} else {
-			item, err := blink.GetBlinkData(strings.TrimPrefix(r.URL.Path, "/"))
-			fmt.Println(item.Status)
-			if item.Status == "" {
-				http.NotFound(w, r)
-				return
-			}
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Error fetching data: %v", err), http.StatusInternalServerError)
-				return
-			}
-			middleware.Chain(w, r, template.Home("Page Name", item))
-		}
+		middleware.Chain(w, r, template.JoinGame())
 	})
-	mux.HandleFunc("POST /submitDealer", handleSubmit)
-	fmt.Printf("server is running on port %s\n", os.Getenv("PORT"))
+
+	mux.HandleFunc("GET /admin", func(w http.ResponseWriter, r *http.Request) {
+		// Admin dashboard handler
+		// Implement authentication
+	})
+
+	mux.HandleFunc("POST /joinGame", handleJoinGame(gameManager))
+	mux.HandleFunc("GET /ws/game", websocket.HandleWebSocket(gameManager))
+
+	// mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	// 	if r.URL.Path == "/" {
+	// 		if err != nil {
+	// 			http.Error(w, fmt.Sprintf("Error fetching data: %v", err), http.StatusInternalServerError)
+	// 			return
+	// 		}
+	// 		middleware.Chain(w, r, template.Home("Home"))
+	// 	} else {
+	//
+	// 	}
+	// })
+	//TODO: Add logic for game rooms
+	// mux.HandleFunc("POST /joinGame", handleSubmit)
+	fmt.Printf("server is running on  http://localhost:%s\n", os.Getenv("PORT"))
 	err = http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 	if err != nil {
 		fmt.Println(err)

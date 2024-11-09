@@ -1,0 +1,23 @@
+package admin
+
+import (
+"fmt"
+"richetechguy/internal/game"
+)
+
+templ QuestionList(questions []game.Question) {
+<div class="space-y-4">
+	for _, q := range questions {
+	<div class="border p-4 rounded">
+		<p class="font-semibold">{ q.Text }</p>
+		<div class="ml-4 mt-2">
+			for i, opt := range q.Options {
+			<p class={ templ.KV("font-bold", fmt.Sprint(i+1)==q.Correct) }>
+				{ fmt.Sprintf("%d. %s", i+1, opt) }
+			</p>
+			}
+		</div>
+	</div>
+	}
+</div>
+}
