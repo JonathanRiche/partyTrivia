@@ -1,0 +1,41 @@
+package template
+
+import (
+	"fmt"
+	"richetechguy/internal/blink"
+)
+
+templ ContentItemComponent(item blink.ContentItem) {
+	<div class="content-item">
+		<div class="content">
+			@templ.Raw(item.Body.HTML)
+		</div>
+	</div>
+}
+
+templ Layout(title string, styles string) {
+	<html>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<script src="https://unpkg.com/htmx.org@1.9.11"></script>
+			<title>{ title }</title>
+			@templ.Raw(fmt.Sprintf("<style>%s</style>", styles))
+		</head>
+		<body>
+			{ children... }
+			<script type="module"> 
+				import { main } from "/static/js/main.js";
+				 await main();
+			</script>
+		</body>
+	</html>
+}
+
+// route!("GET /")
+// middleware!(ParseForm)
+templ Home(title string, item blink.ContentItem) {
+	@Layout(title, item.Body.CSS) {
+		@ContentItemComponent(item)
+	}
+}
