@@ -5,7 +5,7 @@ nixPkgs = ["go", "templ", "curl"]
 cmds = ["go mod tidy"]
 
 [phases.build]
-cmds = ["go build -o out ./cmd/main.go"]
+cmds = ["go build -o out"]
 
 [start]
 cmd = "./out"
