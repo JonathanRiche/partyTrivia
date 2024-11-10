@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://cloudconvert.com/
+HostUrl=https://eu-central.storage.cloudconvert.com/tasks/a6a66667-2e84-4d4b-9721-60781527e7e9/favicon.ico?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cloudconvert-production%2F20241109%2Ffra%2Fs3%2Faws4_request&X-Amz-Date=20241109T230236Z&X-Amz-Expires=86400&X-Amz-Signature=a615942085fa9cbd3a204001b8fc131369f39edb3b238ed2ae95fe0204c7eda9&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3D%22favicon.ico%22&response-content-type=image%2Fvnd.microsoft.icon&x-id=GetObject

@@ -1,60 +1,83 @@
 package template
 
+import "richetechguy/internal/game"
+
 templ Layout(title string) {
-<html>
-
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<script src="https://unpkg.com/htmx.org@1.9.11"></script>
-	<script src="https://cdn.tailwindcss.com"></script>
-	<title>{ title }</title>
-</head>
-
-<body>
-	{ children... }
-	<script type="module">
+	<html>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<script src="https://unpkg.com/htmx.org@1.9.11"></script>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<title>{ title }</title>
+		</head>
+		<body>
+			{ children... }
+			<script type="module">
 		import {main} from "/static/js/main.js";
 		await main();
 	</script>
-</body>
-
-</html>
+		</body>
+	</html>
 }
 
 templ Home(title string) {
-@Layout(title) {
-<div>Hello</div>
-}
+	@Layout(title) {
+		<div>Hello</div>
+	}
 }
 
-templ JoinGame() {
-@Layout("Join Game") {
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
-	<div class="bg-white p-8 rounded-lg shadow-md">
-		<h1 class="text-2xl font-bold mb-4">Join Game</h1>
-		<form hx-post="/joinGame" hx-swap="outerHTML">
-			<input type="text" name="name" placeholder="Enter your name"
-				class="w-full p-2 border rounded mb-4" />
-			<button type="submit" class="w-full bg-blue-500 text-white p-2 rounded">
-				Join
-			</button>
-		</form>
-	</div>
-</div>
-}
+templ JoinGame(gm *game.GameManager) {
+	@Layout("Join Game") {
+		<h1 class="text-2xl text-center font-bold py-4 bg-gray-100">Rookie of the Year</h1>
+		<div class="min-h-screen flex items-center justify-center bg-gray-100">
+			<div class="bg-white p-8 rounded-lg shadow-md">
+				<h1 class="text-2xl font-bold mb-4">Join Game</h1>
+				<form hx-post="/joinGame" hx-swap="outerHTML">
+					<div class="mb-4">
+						<input
+							type="text"
+							name="name"
+							placeholder="Enter your name"
+							class="w-full p-2 border rounded mb-4"
+							required
+						/>
+					</div>
+					<div class="mb-4">
+						<select name="gameId" class="w-full p-2 border rounded" required>
+							<option value="">Select a game to join</option>
+							for id := range gm.Games {
+								<option value={ id }>Game { id } </option>
+							}
+						</select>
+					</div>
+					if len(gm.Games) == 0 {
+						<p class="text-red-500 mb-4">No games available. Wait for an admin to create one.</p>
+					}
+					<button
+						type="submit"
+						class="w-full bg-blue-500 text-white p-2 rounded"
+						disabled?={ 
+				len(gm.Games)==0 }
+					>
+						Join
+					</button>
+				</form>
+			</div>
+		</div>
+	}
 }
 
 templ GameLobby(playerName string) {
-@Layout("Game Lobby") {
-<div class="min-h-screen bg-gray-100 p-8">
-	<div class="bg-white rounded-lg shadow-md p-6">
-		<h1 class="text-2xl font-bold mb-4">Waiting for game to start...</h1>
-		<p>Welcome, { playerName }!</p>
-		<div id="players-list" hx-ws="connect:/ws/game">
-			<!-- Players will be listed here -->
+	@Layout("Game Lobby") {
+		<div class="min-h-screen bg-gray-100 p-8">
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<h1 class="text-2xl font-bold mb-4">Waiting for game to start...</h1>
+				<p>Welcome, { playerName }!</p>
+				<div id="players-list" hx-ws="connect:/ws/game">
+					<!-- Players will be listed here -->
+				</div>
+			</div>
 		</div>
-	</div>
-</div>
-}
+	}
 }
