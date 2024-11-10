@@ -1,33 +1,69 @@
 package admin
 
 templ AdminLayout(title string) {
-<!DOCTYPE html>
-<html lang="en">
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<script src="https://unpkg.com/htmx.org@1.9.6"></script>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script src="/static/js/admin.js"></script>
+			<style>
+		@keyframes slide-in {
+			from {
+				opacity: 0;
+				transform: translateY(-10px);
+			}
 
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>{ title }</title>
-	<script src="https://unpkg.com/htmx.org@1.9.6"></script>
-	<script src="https://cdn.tailwindcss.com"></script>
-</head>
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
 
-<body>
-	<div class="min-h-screen bg-gray-100">
-		<nav class="bg-white shadow-lg">
-			<div class="max-w-7xl mx-auto px-4">
-				<div class="flex justify-between h-16">
-					<div class="flex">
-						<div class="flex-shrink-0 flex items-center">
-							<span class="text-xl font-bold">Admin Dashboard</span>
+		.animate-slide-in {
+			animation: slide-in 0.3s ease-out forwards;
+		}
+
+		.player-enter {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+
+		.player-enter-active {
+			opacity: 1;
+			transform: translateY(0);
+			transition: opacity 300ms, transform 300ms;
+		}
+
+		.player-exit {
+			opacity: 1;
+		}
+
+		.player-exit-active {
+			opacity: 0;
+			transform: translateY(-10px);
+			transition: opacity 300ms, transform 300ms;
+		}
+	</style>
+		</head>
+		<body>
+			<div class="min-h-screen bg-gray-100">
+				<nav class="bg-white shadow-lg">
+					<div class="max-w-7xl mx-auto px-4">
+						<div class="flex justify-between h-16">
+							<div class="flex">
+								<div class="flex-shrink-0 flex items-center">
+									<span class="text-xl font-bold">Admin Dashboard</span>
+								</div>
+							</div>
 						</div>
 					</div>
-				</div>
+				</nav>
+				{ children... }
 			</div>
-		</nav>
-		{ children... }
-	</div>
-</body>
-
-</html>
+		</body>
+	</html>
 }

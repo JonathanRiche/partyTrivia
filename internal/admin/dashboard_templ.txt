@@ -1,4 +1,9 @@
-<div class=\"p-6\"><h1 class=\"text-3xl font-bold mb-6\">Game Admin Dashboard</h1><!-- Game Controls --><div class=\"bg-white rounded-lg shadow p-6 mb-6\"><h2 class=\"text-xl font-semibold mb-4\">Game Controls</h2><div class=\"flex gap-4\"><button hx-post=\"/admin/game/create\" hx-target=\"#gameStatus\" class=\"bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded\">Create New Game</button> <button hx-post=\"/admin/game/start\" hx-target=\"#gameStatus\" class=\"bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded\">Start Game</button> <button hx-post=\"/admin/game/end\" hx-target=\"#gameStatus\" class=\"bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded\">End Game</button> <button hx-post=\"/admin/game/clear\" hx-target=\"#gameStatus\" class=\"bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded\">Clear All Games</button> <select hx-post=\"/admin/game/select\" hx-target=\"#gameStatus\" class=\"bg-gray-50 p-2 rounded\"><option value=\"\">Select a game to join</option> 
+<div class=\"p-6\"><h1 class=\"text-3xl font-bold mb-6\">Game Admin Dashboard</h1><!-- Game Controls --><div class=\"bg-white rounded-lg shadow p-6 mb-6\"><h2 class=\"text-xl font-semibold mb-4\">Game Controls</h2><div class=\"flex gap-4\"><button hx-post=\"/admin/game/create\" hx-target=\"#gameStatus\" class=\"bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded\">Create New Game</button> <button hx-post=\"/admin/game/start\" id=\"startButton\" hx-target=\"#gameStatus\" hx-vals=\"{&#34;gameID&#34;: &#34;&#34;}\" class=\"bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded\">Start Game</button> <button hx-post=\"/admin/game/end\" id=\"endButton\" hx-target=\"#gameStatus\" hx-vals=\"{&#34;gameID&#34;: &#34;&#34;}\" class=\"bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded\">End Game</button> <button hx-post=\"/admin/game/clear\" hx-target=\"#gameStatus\" class=\"bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded\">Clear All Games</button> <select id=\"gameIDSelect\" name=\"gameID\" hx-post=\"/admin/game/select\" hx-target=\"#gameStatus\" hx-trigger=\"change[this.value!=&#39;default&#39;]\" class=\"bg-gray-50 p-2 rounded\"><option value=\"default\">Select a game to join</option> 
+<option value=\"
+\"
+ selected
+>Game 
+</option>
 <option value=\"
 \">Game 
 </option>
@@ -10,12 +15,22 @@
 <span class=\"
 \">
 Active
-Inactive
+Waiting to Start
 </span></div><div><span class=\"font-semibold\">Current Round:</span> <span>
-</span></div><div><span class=\"font-semibold\">Players:</span> <span>
-</span></div></div>
-<div class=\"space-y-2\">
-<div class=\"flex items-center justify-between bg-gray-50 p-2 rounded\"><span>
-</span> <span class=\"font-semibold\">Score: 
 </span></div>
+<div><span class=\"font-semibold\">Players:</span> <span>
+</span></div><div id=\"playerList\" class=\"mt-4\">
+</div>
+</div>
+<div class=\"bg-white rounded-lg shadow p-4\"><button hx-post=\"/admin/game/startQuestions\" id=\"startButton\" hx-target=\"#questionStatus\" hx-vals=\"
+\" class=\"bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded\">Start Game</button><div class=\"mb-4 flex justify-between items-center\"><h3 class=\"text-lg font-semibold\">Connected Players (
+)</h3><div id=\"questionStatus\"></div><span class=\"bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full\">Live</span></div>
+<div class=\"text-gray-500 text-center py-4\"><p>No players connected</p><p class=\"text-sm\">Waiting for players to join...</p></div>
+<div class=\"space-y-2\">
+<div class=\"flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors\"><div class=\"flex items-center space-x-3\"><div class=\"w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold\">
+</div><div><p class=\"font-medium\">
+</p><p class=\"text-sm text-gray-500\">ID: 
+</p></div></div><div class=\"flex items-center space-x-4\"><div class=\"text-right\"><p class=\"text-sm font-medium\">Score</p><p class=\"text-lg font-bold text-blue-600\">
+</p></div><div class=\"flex flex-col items-center text-xs text-gray-500\"><span class=\"w-2 h-2 bg-green-500 rounded-full mb-1\"></span> Connected</div></div></div>
+</div>
 </div>

@@ -2,13 +2,19 @@ package websocket
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"richetechguy/internal/game"
 	"richetechguy/internal/types"
+	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
+var (
+	adminConnections = make(map[*websocket.Conn]bool)
+	adminMutex       sync.RWMutex
+)
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -72,6 +78,17 @@ func HandleWebSocket(gameManager *game.GameManager) http.HandlerFunc {
 		activeGame.Players[player.ID] = player
 
 		// Broadcast player joined message
+		// broadcastMessage := Message{
+		// 	Type: "playerJoined",
+		// 	Payload: map[string]interface{}{
+		// 		"players": activeGame.Players,
+		// 	},
+		// }
+		// broadcastToPlayers(activeGame, broadcastMessage)
+		// After adding player to game
+		// activeGame.Players[player.ID] = player
+
+		// Broadcast to other players
 		broadcastMessage := Message{
 			Type: "playerJoined",
 			Payload: map[string]interface{}{
@@ -79,7 +96,18 @@ func HandleWebSocket(gameManager *game.GameManager) http.HandlerFunc {
 			},
 		}
 		broadcastToPlayers(activeGame, broadcastMessage)
+		// Notify admins
 
+		adminMessage := Message{
+			Type: "playerList",
+			Payload: map[string]interface{}{
+				"gameId":   activeGame.ID,
+				"players":  activeGame.Players,
+				"isActive": activeGame.IsActive, // Add this line
+			},
+		}
+
+		broadcastToAdmins(adminMessage)
 		// Handle incoming messages
 		for {
 			var msg Message
@@ -97,6 +125,17 @@ func HandleWebSocket(gameManager *game.GameManager) http.HandlerFunc {
 }
 
 func broadcastToPlayers(gameState *types.GameState, msg Message) {
+	for _, player := range gameState.Players {
+		if player.WSConn != nil {
+			if err := player.WSConn.WriteJSON(msg); err != nil {
+				fmt.Printf("Error broadcasting to player %s: %v\n", player.ID, err)
+				player.CloseConnection()
+				delete(gameState.Players, player.ID)
+			}
+		}
+	}
+}
+func BroadcastToPlayers(gameState *types.GameState, msg Message) {
 	for _, player := range gameState.Players {
 		if player.WSConn != nil {
 			if err := player.WSConn.WriteJSON(msg); err != nil {
@@ -135,7 +174,18 @@ func HandleAdminWebSocket(gameManager *game.GameManager) http.HandlerFunc {
 			http.Error(w, "Could not upgrade connection", http.StatusInternalServerError)
 			return
 		}
-		defer conn.Close()
+		// Add connection to admin connections
+		adminMutex.Lock()
+		adminConnections[conn] = true
+		adminMutex.Unlock()
+
+		defer func() {
+			adminMutex.Lock()
+			delete(adminConnections, conn)
+			adminMutex.Unlock()
+			conn.Close()
+		}()
+		// defer conn.Close()
 
 		// Send initial game state
 		games := gameManager.GetAllGames()
@@ -157,8 +207,34 @@ func HandleAdminWebSocket(gameManager *game.GameManager) http.HandlerFunc {
 			if err != nil {
 				break
 			}
+			fmt.Println("Received message:", msg)
 
 			// Handle admin messages if needed
+		}
+	}
+}
+func broadcastToAdmins(msg Message) {
+
+	adminMutex.RLock()
+	defer adminMutex.RUnlock()
+
+	for conn := range adminConnections {
+		if err := conn.WriteJSON(msg); err != nil {
+			fmt.Printf("Error broadcasting to admin: %v\n", err)
+			conn.Close()
+			delete(adminConnections, conn)
+		}
+	}
+}
+func BroadcastToAdmins(msg Message) {
+	adminMutex.RLock()
+	defer adminMutex.RUnlock()
+
+	for conn := range adminConnections {
+		if err := conn.WriteJSON(msg); err != nil {
+			fmt.Printf("Error broadcasting to admin: %v\n", err)
+			conn.Close()
+			delete(adminConnections, conn)
 		}
 	}
 }

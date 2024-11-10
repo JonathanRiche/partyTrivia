@@ -1,19 +1,66 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
+type QuestionType string
+
+const (
+	MultipleChoice QuestionType = "multiple"
+	SingleChoice   QuestionType = "single"
+)
+
+// IsValid checks if the question type is valid
+func (qt QuestionType) IsValid() bool {
+	switch qt {
+	case MultipleChoice, SingleChoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// String implements the Stringer interface
+func (qt QuestionType) String() string {
+	return string(qt)
+}
+
 // Question represents a single trivia question
 type Question struct {
-	ID      int      `json:"id"`
-	Text    string   `json:"text"`
-	Options []string `json:"options"`
-	Correct string   `json:"correct"`
+	ID      int          `json:"id"`
+	Text    string       `json:"text"`
+	Options []string     `json:"options"`
+	Type    QuestionType `json:"type"`
+	Correct string       `json:"correct"`
+}
+
+// ValidateType ensures the question type is valid
+func (q *Question) ValidateType() error {
+	if !q.Type.IsValid() {
+		return fmt.Errorf("invalid question type: %s", q.Type)
+	}
+	return nil
+}
+func (qt *QuestionType) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	temp := QuestionType(s)
+	if !temp.IsValid() {
+		return fmt.Errorf("invalid question type: %s", s)
+	}
+
+	*qt = temp
+	return nil
 }
 
 // Player represents a game participant
@@ -39,6 +86,10 @@ type GameState struct {
 	EndTime         time.Time
 	Mu              sync.RWMutex
 }
+
+// func (gs *GameState) SetQuestions(questions []Question) {
+// 	gs.Questions = questions
+// }
 
 // Game state management methods
 func (gs *GameState) StartGame() error {
@@ -153,4 +204,67 @@ func (p *Player) CloseConnection() {
 		p.WSConn.Close()
 		p.WSConn = nil
 	}
+}
+
+func (p *Player) SubmitAnswer(questionID int, answer string) {
+	if p.Answers == nil {
+		p.Answers = make(map[int]string)
+	}
+	p.Answers[questionID] = answer
+}
+
+func (p *Player) GetAnswer(questionID int) (string, bool) {
+	if p.Answers == nil {
+		return "", false
+	}
+	answer, exists := p.Answers[questionID]
+	return answer, exists
+}
+
+func (p *Player) GetAllAnswers() map[int]string {
+	if p.Answers == nil {
+		return make(map[int]string)
+	}
+	return p.Answers
+}
+func (q *Question) ValidateAnswer(answer string) bool {
+	switch q.Type {
+	case QuestionType(SingleChoice):
+		return answer == q.Correct
+	case QuestionType(MultipleChoice):
+		// Split both correct answers and submitted answers
+		correctAnswers := strings.Split(q.Correct, ",")
+		submittedAnswers := strings.Split(answer, ",")
+		// Compare sets of answers
+		return compareAnswerSets(correctAnswers, submittedAnswers)
+	default:
+		return false
+	}
+}
+
+func compareAnswerSets(correct, submitted []string) bool {
+	if len(correct) != len(submitted) {
+		return false
+	}
+
+	// Create maps for easier comparison
+	correctMap := make(map[string]bool)
+	submittedMap := make(map[string]bool)
+
+	for _, ans := range correct {
+		correctMap[strings.TrimSpace(ans)] = true
+	}
+
+	for _, ans := range submitted {
+		submittedMap[strings.TrimSpace(ans)] = true
+	}
+
+	// Compare maps
+	for ans := range correctMap {
+		if !submittedMap[ans] {
+			return false
+		}
+	}
+
+	return true
 }

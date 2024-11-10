@@ -11,5 +11,5 @@
 <button type=\"submit\" class=\"w-full bg-blue-500 text-white p-2 rounded\"
  disabled
 >Join</button></form></div></div>
-<div class=\"min-h-screen bg-gray-100 p-8\"><div class=\"bg-white rounded-lg shadow-md p-6\"><h1 class=\"text-2xl font-bold mb-4\">Waiting for game to start...</h1><p>Welcome, 
-!</p><div id=\"players-list\" hx-ws=\"connect:/ws/game\"><!-- Players will be listed here --></div></div></div>
+<div class=\"min-h-screen bg-gray-100 p-8\"><div class=\"bg-white rounded-lg shadow-md p-6\"><h1 class=\"text-2xl font-bold mb-4\">Game Lobby</h1><div class=\"mb-4\"><p class=\"text-lg\">Welcome, 
+!</p><p id=\"gameStatus\" class=\"text-blue-600\">Waiting for game to start...</p></div><div class=\"border-t pt-4\"><h2 class=\"text-xl font-semibold mb-2\">Players</h2><div id=\"players-list\" class=\"space-y-2\" hx-ws=\"connect:/ws/game\"><!-- Players will be listed here --></div></div><div id=\"question-container\" class=\"hidden mt-4\"><!-- Questions will appear here when game starts --></div></div></div>

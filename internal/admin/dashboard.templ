@@ -23,14 +23,18 @@ templ Dashboard(gm *game.GameManager) {
 					</button>
 					<button
 						hx-post="/admin/game/start"
+						id="startButton"
 						hx-target="#gameStatus"
+						hx-vals='{"gameID": ""}'
 						class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
 					>
 						Start Game
 					</button>
 					<button
 						hx-post="/admin/game/end"
+						id="endButton"
 						hx-target="#gameStatus"
+						hx-vals='{"gameID": ""}'
 						class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
 					>
 						End Game
@@ -42,10 +46,21 @@ templ Dashboard(gm *game.GameManager) {
 					>
 						Clear All Games
 					</button>
-					<select hx-post="/admin/game/select" hx-target="#gameStatus" class="bg-gray-50 p-2 rounded">
-						<option value="">Select a game to join</option>
-						for id := range gm.Games {
-							<option value={ id }>Game { id } </option>
+					<select
+						id="gameIDSelect"
+						name="gameID"
+						hx-post="/admin/game/select"
+						hx-target="#gameStatus"
+						hx-trigger="change[this.value!='default']"
+						class="bg-gray-50 p-2 rounded"
+					>
+						<option value="default">Select a game to join</option>
+						for id, val := range gm.Games {
+							if id == gm.GetFirstGameID() {
+								<option value={ id } selected?={ true }>Game { val.Name }</option>
+							} else {
+								<option value={ id }>Game { val.Name }</option>
+							}
 						}
 					</select>
 				</div>
@@ -126,7 +141,7 @@ templ GameStatus(game *types.GameState) {
 					if game.IsActive {
 						Active
 					} else {
-						Inactive
+						Waiting to Start
 					}
 				</span>
 			</div>
@@ -134,20 +149,71 @@ templ GameStatus(game *types.GameState) {
 				<span class="font-semibold">Current Round:</span>
 				<span>{ fmt.Sprint(game.Round) }</span>
 			</div>
-			<div>
-				<span class="font-semibold">Players:</span>
-				<span>{ fmt.Sprint(len(game.Players)) }</span>
-			</div>
+			if game.IsActive {
+				<div>
+					<span class="font-semibold">Players:</span>
+					<span>{ fmt.Sprint(len(game.Players)) }</span>
+				</div>
+				<div id="playerList" class="mt-4">
+					@PlayerList(game.Players, game.ID)
+				</div>
+			}
 		</div>
 	}
 }
 
-templ PlayerList(players map[string]*types.Player) {
-	<div class="space-y-2">
-		for _, player := range players {
-			<div class="flex items-center justify-between bg-gray-50 p-2 rounded">
-				<span>{ player.Name }</span>
-				<span class="font-semibold">Score: { fmt.Sprint(player.Score) }</span>
+templ PlayerList(players map[string]*types.Player, gameID string) {
+	<div class="bg-white rounded-lg shadow p-4">
+		<button
+			hx-post="/admin/game/startQuestions"
+			id="startButton"
+			hx-target="#questionStatus"
+			hx-vals={ `{"gameID": "` + gameID + `" }` }
+			class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+		>
+			Start Game
+		</button>
+		<div class="mb-4 flex justify-between items-center">
+			<h3 class="text-lg font-semibold">Connected Players ({ fmt.Sprint(len(players)) })</h3>
+			<div id="questionStatus"></div>
+			<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Live</span>
+		</div>
+		if len(players) == 0 {
+			<div class="text-gray-500 text-center py-4">
+				<p>No players connected</p>
+				<p class="text-sm">Waiting for players to join...</p>
+			</div>
+		} else {
+			<div class="space-y-2">
+				for _, player := range players {
+					<div
+						class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+					>
+						<div class="flex items-center space-x-3">
+							<div
+								class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
+							>
+								{ string([]rune(player.Name)[0]) }
+							</div>
+							<div>
+								<p class="font-medium">{ player.Name }</p>
+								<p class="text-sm text-gray-500">ID: { player.ID }</p>
+							</div>
+						</div>
+						<div class="flex items-center space-x-4">
+							<div class="text-right">
+								<p class="text-sm font-medium">Score</p>
+								<p class="text-lg font-bold text-blue-600">
+									{ fmt.Sprint(player.Score) }
+								</p>
+							</div>
+							<div class="flex flex-col items-center text-xs text-gray-500">
+								<span class="w-2 h-2 bg-green-500 rounded-full mb-1"></span>
+								Connected
+							</div>
+						</div>
+					</div>
+				}
 			</div>
 		}
 	</div>

@@ -12,6 +12,7 @@ import (
 	"richetechguy/internal/types"
 	"richetechguy/internal/view"
 	"richetechguy/internal/websocket"
+	"strconv"
 	"time"
 
 	"richetechguy/internal/admin"
@@ -23,16 +24,26 @@ import (
 func handleJoinGame(gm *game.GameManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.FormValue("name")
-		if name == "" {
-			http.Error(w, "Name is required", http.StatusBadRequest)
+		gameID := r.FormValue("gameId")
+
+		if name == "" || gameID == "" {
+			http.Error(w, "Name and game ID are required", http.StatusBadRequest)
 			return
 		}
 
-		// Create or join game logic
-		// Return game lobby template
+		// Add player to game
+		playerID, err := gm.AddPlayer(gameID, name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("Player ID added: %s and name: %s\n", playerID, name)
+
+		// Render game lobby with player info
 		template.GameLobby(name).Render(r.Context(), w)
 	}
 }
+
 func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -79,30 +90,60 @@ func handleCreateGame(gm *game.GameManager) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("HX-Trigger", "gameCreated")
-		fmt.Fprintf(w, "Game created: %s", gameID)
+		w.Header().Set("HX-Refresh", "true") // This will refresh the page
+		fmt.Fprintf(w, "Game created: %s", gameID.Name)
 	}
 }
-
-func handleStartGame(gm *game.GameManager) http.HandlerFunc {
+func handleStartGame(gm *game.GameManager, qm *game.QuestionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		gameID := r.FormValue("gameID")
-		if err := gm.StartGame(gameID); err != nil {
+		if err := gm.StartGame(gameID, qm); err != nil {
+			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showMessage": "%s"}`, err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		// Get the game state
+		game, _ := gm.GetGame(gameID)
+
+		// Broadcast to players
+		playerMessage := websocket.Message{
+			Type: "gameState",
+			Payload: map[string]interface{}{
+				"state":   "active",
+				"message": "Game has started!",
+				"players": game.Players,
+			},
+		}
+		websocket.BroadcastToPlayers(game, playerMessage)
+
+		// Broadcast to admins
+		adminMessage := websocket.Message{
+			Type: "playerList",
+			Payload: map[string]interface{}{
+				"gameId":   gameID,
+				"players":  game.Players,
+				"isActive": true,
+			},
+		}
+		websocket.BroadcastToAdmins(adminMessage)
+
 		w.Header().Set("HX-Trigger", "gameStarted")
 		fmt.Fprintf(w, "Game started")
 	}
 }
+
 func handleSelectGame(gm *game.GameManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		gameID := r.FormValue("gameID")
-		if err := gm.SelectGame(gameID); err != nil {
+		fmt.Println(gameID)
+		gameState, err := gm.SelectGame(gameID)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("HX-Trigger", "gameSelected")
-		fmt.Fprintf(w, "Game selected")
+		fmt.Fprintf(w, "Game selected %s", gameState.Name)
 	}
 }
 func handleEndGame(gm *game.GameManager) http.HandlerFunc {
@@ -157,11 +198,111 @@ func handlePlayerList(gm *game.GameManager) http.HandlerFunc {
 		gameID := r.FormValue("gameID")
 		game, _ := gm.GetGame(gameID)
 		if game != nil {
-			admin.PlayerList(game.Players).Render(r.Context(), w)
+			admin.PlayerList(game.Players, gameID).Render(r.Context(), w)
 		}
 	}
 }
+func handleStartQuestions(gm *game.GameManager, qm *game.QuestionManager) http.HandlerFunc {
 
+	return func(w http.ResponseWriter, r *http.Request) {
+		gameID := r.FormValue("gameID")
+		// if err := gm.StartGame(gameID, qm); err != nil {
+		// 	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showMessage": "%s"}`, err))
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
+
+		// Get the game state
+		game, err := gm.GetGame(gameID)
+		if err != nil {
+			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showMessage": "%s"}`, err))
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Broadcast to players
+		// {
+		//   id: string;
+		//   text: string;
+		//   options: string[];
+		// }
+		questions := qm.GetQuestions()
+		playerMessage := websocket.Message{
+			Type: "question",
+			Payload: map[string]interface{}{
+				"state":     "active",
+				"message":   "Questions has started!",
+				"questions": questions,
+				"gameId":    gameID,
+			},
+		}
+		websocket.BroadcastToPlayers(game, playerMessage)
+
+		// // Broadcast to admins
+		// adminMessage := websocket.Message{
+		// 	Type: "playerList",
+		// 	Payload: map[string]interface{}{
+		// 		"gameId":   gameID,
+		// 		"players":  game.Players,
+		// 		"isActive": true,
+		// 	},
+		// }
+		// websocket.BroadcastToAdmins(adminMessage)
+
+		// w.Header().Set("HX-Trigger", "gameStarted")
+		fmt.Fprintf(w, "Questions started")
+	}
+}
+func handleAnswerSubmission(gm *game.GameManager, qm *game.QuestionManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		gameID := r.FormValue("gameID")
+		questionID := r.FormValue("questionID")
+		answer := r.FormValue("answer")
+		playerID := r.FormValue("playerID") // You'll need to pass this from the session
+
+		game, err := gm.GetGame(gameID)
+		if err != nil {
+			http.Error(w, "Game not found", http.StatusBadRequest)
+			return
+		}
+
+		player, exists := game.Players[playerID]
+		if !exists {
+			http.Error(w, "Player not found", http.StatusBadRequest)
+			return
+		}
+
+		qID, _ := strconv.Atoi(questionID)
+		player.SubmitAnswer(qID, answer)
+
+		// Broadcast answer submission to admin
+		adminMsg := websocket.Message{
+			Type: "playerAnswered",
+			Payload: map[string]interface{}{
+				"gameId":     gameID,
+				"playerId":   playerID,
+				"questionId": qID,
+				"score":      player.Score,
+			},
+		}
+		websocket.BroadcastToAdmins(adminMsg)
+
+		questions := qm.GetQuestions()
+		playerMessage := websocket.Message{
+			Type: "question",
+			Payload: map[string]interface{}{
+				"state":     "active",
+				"message":   "On the next question!",
+				"questions": questions,
+				"gameId":    gameID,
+			},
+		}
+		websocket.BroadcastToPlayers(game, playerMessage)
+
+		// Return updated question view or confirmation
+		w.Write([]byte("Answer submitted!"))
+	}
+}
 func main() {
 
 	err := generate.GenerateMain()
@@ -175,16 +316,17 @@ func main() {
 	dbURL := os.Getenv("TURSO_DATABASE_URL")
 	authToken := os.Getenv("TURSO_AUTH_TOKEN")
 
+	questionManager := game.NewQuestionManager()
 	gameManager, err := game.NewGameManager(dbURL, authToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize game manager: %v", err)
 	}
-
 	// Add periodic state saving
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		fmt.Println("Starting periodic state saving...")
+		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
+			// fmt.Println("Starting periodic state saving...")
+
 			for _, game := range gameManager.Games {
 				if err := gameManager.Db.SaveGame(game); err != nil {
 					log.Printf("Error saving game state: %v", err)
@@ -196,18 +338,20 @@ func main() {
 	mux.HandleFunc("GET /favicon.ico", view.ServeFavicon)
 	mux.HandleFunc("GET /static/", view.ServeStaticFiles)
 
-	questionManager := game.NewQuestionManager()
 	// gameManager := game.NewGameManager()
 
 	// Load existing questions
 	if err := questionManager.LoadQuestions(); err != nil {
 		log.Printf("Error loading questions: %v", err)
 	}
+	//TODO: modify to bd db instead of questions.json
+	// questionManager.LoadQuestions()
+	// fmt.Println(questionManager.GetQuestions())
 
 	// Admin routes
 	mux.HandleFunc("GET /admin", handleAdmin(gameManager))
 	mux.HandleFunc("POST /admin/game/create", handleCreateGame(gameManager))
-	mux.HandleFunc("POST /admin/game/start", handleStartGame(gameManager))
+	mux.HandleFunc("POST /admin/game/start", handleStartGame(gameManager, questionManager))
 	mux.HandleFunc("POST /admin/game/end", handleEndGame(gameManager))
 	mux.HandleFunc("POST /admin/game/clear", handleClearGames(gameManager))
 	mux.HandleFunc("POST /admin/game/select", handleSelectGame(gameManager))
@@ -215,6 +359,10 @@ func main() {
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		middleware.Chain(w, r, template.JoinGame(gameManager))
 	})
+
+	mux.HandleFunc("POST /admin/game/startQuestions", handleStartQuestions(gameManager, questionManager))
+	mux.HandleFunc("POST /game/submit-answer", handleAnswerSubmission(gameManager, questionManager))
+
 	mux.HandleFunc("GET /admin/game/status", handleGameStatus(gameManager))
 	mux.HandleFunc("GET /admin/game/players", handlePlayerList(gameManager))
 

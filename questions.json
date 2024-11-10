@@ -1,1 +1,120 @@
-[{"id":1,"text":"f","options":["a","b","c","d"],"correct":"1"},{"id":2,"text":"f","options":["a","b","c","d"],"correct":"1"},{"id":3,"text":"f","options":["a","b","c","d"],"correct":"1"},{"id":4,"text":"f","options":["a","b","c","d"],"correct":"1"}]
+[
+	{
+		"id": 1,
+		"text": "Michael Jordan won the Rookie of the Year award in what NBA season year?",
+		"type": "multiple",
+		"options": [
+			"1983-84",
+			"1984-85",
+			"1982-83",
+			"1985-86"
+		],
+		"correct": "1"
+	},
+	{
+		"id": 2,
+		"text": "Who is the youngest player to win Rookie of the Year?",
+		"type": "multiple",
+		"options": [
+			"Kobe Bryant",
+			"Kevin Garnett",
+			"LeBron James",
+			"Carmelo Anthony"
+		],
+		"correct": "2"
+	},
+	{
+		"id": 3,
+		"text": "This former Raptor was the Rookie of the Year in 1999?",
+		"type": "multiple",
+		"options": [
+			"Marcus Camby",
+			"Tracy McGrady",
+			"Damon Stoudamire",
+			"Vince Carter"
+		],
+		"correct": "3"
+	},
+	{
+		"id": 4,
+		"text": "The movie 'Rookie of the Year' is based on which sport?",
+		"type": "multiple",
+		"options": [
+			"Hockey",
+			"Basketball",
+			"Baseball",
+			"Football"
+		],
+		"correct": "2"
+	},
+	{
+		"id": 5,
+		"text": "The movie 'The Rookie' starring Dennis Quaid is based on a true story?",
+		"type": "multiple",
+		"options": [
+			"False",
+			"True"
+		],
+		"correct": "1"
+	},
+	{
+		"id": 6,
+		"text": "Which Barnes was the 3rd player in Raptors history to win Rookie of the Year in the 2021-2022 NBA season?",
+		"type": "multiple",
+		"options": [
+			"Harrison",
+			"Marcus",
+			"Matt",
+			"Scottie"
+		],
+		"correct": "3"
+	},
+	{
+		"id": 7,
+		"text": "John Nolan becomes the oldest recruit in which ABC police procedural?",
+		"type": "multiple",
+		"options": [
+			"NYPD Blue",
+			"Blue Bloods",
+			"The Rookie",
+			"Law & Order"
+		],
+		"correct": "2"
+	},
+	{
+		"id": 8,
+		"text": "What do Andrew Wiggins, Luka Doncic, and Victor Wembanyama have in common?",
+		"type": "multiple",
+		"options": [
+			"They all played in Europe",
+			"They are Rookie of the Year winners born outside of the United States",
+			"They all speak French",
+			"They were all #1 draft picks"
+		],
+		"correct": "1"
+	},
+	{
+		"id": 9,
+		"text": "Which team has the most players that have won Rookie of the Year?",
+		"type": "multiple",
+		"options": [
+			"Chicago Bulls",
+			"Boston Celtics",
+			"Golden State Warriors",
+			"Los Angeles Lakers"
+		],
+		"correct": "2"
+	},
+	{
+		"id": 10,
+		"text": "Which Rookie of the Year took their first steps on Thanksgiving Day?",
+		"type": "multiple",
+		"options": [
+			"Magic Johnson",
+			"Michael Jordan",
+			"Auguste Riche",
+			"LeBron James"
+		],
+		"correct": "2"
+	}
+]

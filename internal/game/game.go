@@ -16,49 +16,26 @@ type GameManager struct {
 }
 
 // StartGame starts a specific game
-func (gm *GameManager) StartGame(gameID string) error {
+func (gm *GameManager) StartGame(gameID string, qm *QuestionManager) error {
 	game, err := gm.GetGame(gameID)
 	if err != nil {
 		return err
 	}
+	if qm.GetQuestions() == nil {
+		return err
+	}
+
+	game.Questions = qm.GetQuestions()
 	return game.StartGame()
 }
-func (gm *GameManager) SelectGame(gameID string) error {
+func (gm *GameManager) SelectGame(gameID string) (*types.GameState, error) {
 	game, err := gm.GetGame(gameID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	game.StartGame()
-	return nil
+	return game, nil
 }
-
-// EndGame ends a specific game
-// func (gm *GameManager) EndGame(gameID string) error {
-// 	game, err := gm.GetGame(gameID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	game.EndGame()
-// 	return nil
-// }
-// func (gm *GameManager) ClearAllGames() {
-// 	gm.mu.Lock()
-// 	defer gm.mu.Unlock()
-//
-// 	// Close all WebSocket connections and clean up players
-// 	for _, game := range gm.Games {
-// 		game.mu.Lock()
-// 		for _, player := range game.Players {
-// 			player.CloseConnection()
-// 		}
-// 		game.Players = make(map[string]*Player)
-// 		game.IsActive = false
-// 		game.mu.Unlock()
-// 	}
-//
-// 	// Clear the games map
-// 	gm.Games = make(map[string]*GameState)
-// }
 
 // AddPlayer adds a player to a game
 func (gm *GameManager) AddPlayer(gameID string, playerName string) (string, error) {
@@ -149,6 +126,7 @@ func NewGameManager(dbURL, authToken string) (*GameManager, error) {
 }
 func NewGameState(name string) *types.GameState {
 	gameID := fmt.Sprintf("game_%d", time.Now().UnixNano())
+
 	return &types.GameState{
 		ID:       gameID,
 		Name:     name,
@@ -196,7 +174,18 @@ func (gm *GameManager) GetGame(gameID string) (*types.GameState, error) {
 
 	game, exists := gm.Games[gameID]
 	if !exists {
-		return nil, fmt.Errorf("game not found: %s", gameID)
+		return nil, fmt.Errorf("Game not found please make sure to either create a new game or select an existing one form the dropdown on the right: %s", gameID)
 	}
 	return game, nil
+}
+
+func (gm *GameManager) GetFirstGameID() string {
+	gm.mu.RLock()
+	defer gm.mu.RUnlock()
+
+	// Get first key from map
+	for id := range gm.Games {
+		return id
+	}
+	return ""
 }

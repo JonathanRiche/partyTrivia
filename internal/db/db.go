@@ -4,10 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	// "richetechguy/internal/game"
-
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
-
 	"richetechguy/internal/types"
 	"sync"
 	// "time"
@@ -62,6 +59,25 @@ func (d *DB) LoadGames() (map[string]*types.GameState, error) {
 
 	return games, rows.Err()
 }
+
+// func (d *DB) SaveQuestions(gameState *types.GameState, questions types.Question) error {
+// 	ctx := context.Background()
+//
+// 	// Use upsert (INSERT OR REPLACE)
+// 	_, err = d.db.ExecContext(ctx, `
+//         INSERT OR REPLACE INTO questions (
+//             id, text, options, correct
+//         ) VALUES (?, ?, ?, ?)
+//     `,
+// 		questions.ID,
+// 		questions.Text,
+// 		questions.Options,
+// 		questions.Correct,
+// 	)
+//
+// 	return err
+// }
+
 func NewDB(url string, authToken string) (*DB, error) {
 	db, err := sql.Open("libsql", url+"?authToken="+authToken)
 	if err != nil {
