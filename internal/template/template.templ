@@ -29,12 +29,19 @@ templ Home(title string) {
 
 templ JoinGame(gm *game.GameManager) {
 	@Layout("Join Game") {
-		<h1 class="text-2xl text-center font-bold py-4 bg-gray-100">Rookie of the Year</h1>
-		<div class="min-h-screen flex items-center justify-center bg-gray-100">
+		<h1 class="hidden text-2xl text-center font-bold py-4 bg-gray-100">Rookie of the Year</h1>
+		<div
+			class="min-h-screen flex items-center justify-center bg-no-repeat bg-contain bg-center"
+			style="background-image: linear-gradient(rgba(229, 231, 235, 0.7), rgba(229, 231, 235, 0.7)), url('/static/bg.jpeg');"
+		>
 			<div class="bg-white p-8 rounded-lg shadow-md">
-				<h1 class="text-2xl font-bold mb-4">Join Game</h1>
-				<form hx-post="/joinGame" hx-swap="outerHTML">
-					<div class="mb-4">
+				<h1 class="text-4xl font-bold mb-4">Rookie of the Year</h1>
+				<a class="text-center underline text-2xl" href="https://app.trivianerd.com/room/JD589Z" target="_blank">
+					Join the Trivia Room
+				</a>
+				<form class="hidden" hx-post="/joinGame" hx-swap="outerHTML">
+					<div class="">
+						<label class="block mb-2">Enter your name</label>
 						<input
 							type="text"
 							name="name"
@@ -44,10 +51,11 @@ templ JoinGame(gm *game.GameManager) {
 						/>
 					</div>
 					<div class="mb-4">
+						<label class="block mb-2">Select a game to join</label>
 						<select name="gameId" class="w-full p-2 border rounded" required>
 							<option value="">Select a game to join</option>
-							for id := range gm.Games {
-								<option value={ id }>Game { id } </option>
+							for id, game := range gm.Games {
+								<option value={ id }>Game { game.Name } </option>
 							}
 						</select>
 					</div>
@@ -68,11 +76,18 @@ templ JoinGame(gm *game.GameManager) {
 	}
 }
 
-templ GameLobby(playerName string) {
+templ GameLobby(playerName string, playerID string) {
 	@Layout("Game Lobby") {
 		<div class="min-h-screen bg-gray-100 p-8">
+			<div>
+				@templ.JSONScript("pid", playerID)
+			</div>
+			<script type="text/javascript">
+		const pid = JSON.parse(document.getElementById('pid').textContent);
+		window.playerID = pid;
+	</script>
 			<div class="bg-white rounded-lg shadow-md p-6">
-				<h1 class="text-2xl font-bold mb-4">Game Lobby</h1>
+				<h1 class="text-2xl font-bold mb-4">Game Lobby { playerID }</h1>
 				<div class="mb-4">
 					<p class="text-lg">Welcome, { playerName }!</p>
 					<p id="gameStatus" class="text-blue-600">Waiting for game to start...</p>

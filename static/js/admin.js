@@ -55,6 +55,8 @@ document.addEventListener('htmx:afterOnLoad', function() {
 							updatePlayerList(document.getElementById('playerList').innerHTML);
 						}
 					});
+				} else {
+					updatePlayerList(document.getElementById('playerList').innerHTML);
 				}
 				break;
 		}

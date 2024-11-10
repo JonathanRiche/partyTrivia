@@ -40,7 +40,7 @@ func handleJoinGame(gm *game.GameManager) http.HandlerFunc {
 		fmt.Printf("Player ID added: %s and name: %s\n", playerID, name)
 
 		// Render game lobby with player info
-		template.GameLobby(name).Render(r.Context(), w)
+		template.GameLobby(name, playerID).Render(r.Context(), w)
 	}
 }
 

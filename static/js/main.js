@@ -4,7 +4,7 @@
  * @typedef {Object} Player
  * @property {string} id - Player's unique identifier
  * @property {string} name - Player's display name
- * @property {number} score - Player's current score
+ * @property {number} score - Player's current scoremain
  * @property {Object.<number, string>} answers - Player's answers to questions
  */
 /**
@@ -208,15 +208,15 @@ function handleGameMessage(message) {
 
 /**
  * Updates the players list in the UI
- * @param {Object.<string, Player>} players
- */
-function updatePlayersList(players) {
+ * @param {{ players: Object.<string, {name: string, score: number}> }} players
+ */function updatePlayersList(players) {
 	console.log('Updating players list:', players);
 	const playersListElement = document.getElementById('players-list');
 	if (playersListElement) {
-		playersListElement.innerHTML = Object.values(players).map(player =>
-			`<div class="p-2 border-b">${player.name} (${player.score})</div>`
-		).join('');
+		playersListElement.innerHTML = Object.values(players.players)
+			.filter(player => !player.name.startsWith('Player'))
+			.map(player => `<div class="p-2 border-b">${player.name} (${player.score})</div>`)
+			.join('');
 	}
 }
 

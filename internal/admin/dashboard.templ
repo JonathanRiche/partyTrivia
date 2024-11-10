@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"richetechguy/internal/game"
 	"richetechguy/internal/types"
+	"strings"
 )
 
 templ Dashboard(gm *game.GameManager) {
@@ -71,10 +72,10 @@ templ Dashboard(gm *game.GameManager) {
 				<div id="currentGame">
 					<!-- Will be updated via HTMX -->
 				</div>
-				<div id="playerList" class="mt-4">
-					<h3 class="text-lg font-semibold mb-2">Connected Players</h3>
-					<!-- Will be updated via WebSocket -->
-				</div>
+			</div>
+			<div id="playerList" class="mt-4">
+				<h3 class="text-lg font-semibold mb-2">Connected Players</h3>
+				<!-- Will be updated via WebSocket -->
 			</div>
 			<!-- Question Management -->
 			<div class="bg-white rounded-lg shadow p-6">
@@ -171,10 +172,9 @@ templ PlayerList(players map[string]*types.Player, gameID string) {
 			hx-vals={ `{"gameID": "` + gameID + `" }` }
 			class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
 		>
-			Start Game
+			Start Questions
 		</button>
 		<div class="mb-4 flex justify-between items-center">
-			<h3 class="text-lg font-semibold">Connected Players ({ fmt.Sprint(len(players)) })</h3>
 			<div id="questionStatus"></div>
 			<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Live</span>
 		</div>
@@ -186,33 +186,35 @@ templ PlayerList(players map[string]*types.Player, gameID string) {
 		} else {
 			<div class="space-y-2">
 				for _, player := range players {
-					<div
-						class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-					>
-						<div class="flex items-center space-x-3">
-							<div
-								class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
-							>
-								{ string([]rune(player.Name)[0]) }
+					if !strings.HasPrefix(player.Name, "Player") {
+						<div
+							class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+						>
+							<div class="flex items-center space-x-3">
+								<div
+									class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
+								>
+									{ string([]rune(player.Name)[0]) }
+								</div>
+								<div>
+									<p class="font-medium">{ player.Name }</p>
+									<p class="text-sm text-gray-500">ID: { player.ID }</p>
+								</div>
 							</div>
-							<div>
-								<p class="font-medium">{ player.Name }</p>
-								<p class="text-sm text-gray-500">ID: { player.ID }</p>
+							<div class="flex items-center space-x-4">
+								<div class="text-right">
+									<p class="text-sm font-medium">Score</p>
+									<p class="text-lg font-bold text-blue-600">
+										{ fmt.Sprint(player.Score) }
+									</p>
+								</div>
+								<div class="flex flex-col items-center text-xs text-gray-500">
+									<span class="w-2 h-2 bg-green-500 rounded-full mb-1"></span>
+									Connected
+								</div>
 							</div>
 						</div>
-						<div class="flex items-center space-x-4">
-							<div class="text-right">
-								<p class="text-sm font-medium">Score</p>
-								<p class="text-lg font-bold text-blue-600">
-									{ fmt.Sprint(player.Score) }
-								</p>
-							</div>
-							<div class="flex flex-col items-center text-xs text-gray-500">
-								<span class="w-2 h-2 bg-green-500 rounded-full mb-1"></span>
-								Connected
-							</div>
-						</div>
-					</div>
+					}
 				}
 			</div>
 		}
